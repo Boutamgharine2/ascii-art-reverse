@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -54,18 +55,21 @@ func reverse(s string) bool {
 		if counter == 8 {
 			counter = 0
 		}
-
-		if data[i] == "" {
+		if line == "" {
+			fmt.Println(i)
+		}
+		if line == "" {
 			if counter != 0 {
 				fmt.Printf("ERROR: Malformed file.\nLine %v should not be empty line.\n", i)
 				os.Exit(0)
 			}
-			good = append(good, [8]string{})
+			good = append(good, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
 			continue
 		}
 		counter++
 		if counter == 1 || i == len(data)-1 {
-			addCharacher(i+1, g, data)
+			addCharacher(i, g, data)
+			good = append(good, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
 			g = make([]bool, len(line))
 		}
 		// fmt.Println("counter", counter, i, line, len(g), len(line))
@@ -97,15 +101,15 @@ func addCharacher(i int, g []bool, data []string) {
 	if i < 8 {
 		return
 	}
-	i -= 9
+	i -= 8
 	charachter := [8]string{}
 	for i1, c := range g {
 		if !c {
-			for _, v := range charachter {
-				fmt.Println(v)
-			}
-			fmt.Println("last char", charachter[6])
-			fmt.Println("last char", charachter[7])
+			// for _, v := range charachter {
+			// 	fmt.Println(v)
+			// }
+			// fmt.Println("last char", charachter[6])
+			// fmt.Println("last char", charachter[7])
 			good = append(good, charachter)
 			charachter = [8]string{}
 		} else {
@@ -142,6 +146,13 @@ func resverseascii() {
 	// fmt.Println(cannbe, otherthansp(""))
 	for _, v := range good {
 		rgx := "\n\n"
+		if v[0] == "" {
+			res += " "
+			continue
+		} else if v[0] == "\n" {
+			res += "\n"
+			continue
+		}
 		for _, v1 := range v {
 			if !otherthansp(v1) {
 				continue
@@ -166,7 +177,7 @@ func resverseascii() {
 				// fmt.Println(rgx)
 			}
 		} else {
-			res += " "
+			log.Fatalln(v)
 		}
 	}
 	fmt.Printf("'%v'\n", res)
