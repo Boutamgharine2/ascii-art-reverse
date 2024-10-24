@@ -6,32 +6,12 @@ import (
 	"strings"
 )
 
-var t1 = [95][8]string{}
-
 func Asci(want string, f string) []string {
 	k := strings.Count(want, "\\n")
 	if k*2 == len(want) {
 		return []string{strings.Replace(want, "\\n", "\n", -1)}
 	}
-	t1 := [95][8]string{}
-	c, err := os.ReadFile(f)
-	if err != nil {
-		log.Fatal(err, " os.ReadFile")
-	}
-	c2 := []string{}
-	if f == "thinkertoy.txt" {
-		c2 = strings.Split(string(c), "\r\n")
-	} else {
-		c2 = strings.Split(string(c), "\n")
-	}
-	counter := 0
-	for i, v := range t1 {
-		counter++
-		for j := range v {
-			t1[i][j] = c2[counter]
-			counter++
-		}
-	}
+	t1 := ParseTmplate(f)
 	return maker(want, &t1)
 }
 
@@ -61,4 +41,27 @@ func build(want string, t *[95][8]string) []string {
 		ans[i] += "\n"
 	}
 	return ans
+}
+
+func ParseTmplate(f string) [95][8]string {
+	t1 := [95][8]string{}
+	c, err := os.ReadFile(f)
+	if err != nil {
+		log.Fatal(err, " os.ReadFile")
+	}
+	c2 := []string{}
+	if f == "thinkertoy.txt" {
+		c2 = strings.Split(string(c), "\r\n")
+	} else {
+		c2 = strings.Split(string(c), "\n")
+	}
+	counter := 0
+	for i, v := range t1 {
+		counter++
+		for j := range v {
+			t1[i][j] = c2[counter]
+			counter++
+		}
+	}
+	return t1
 }
