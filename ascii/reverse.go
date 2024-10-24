@@ -9,15 +9,17 @@ import (
 )
 
 var (
-	cannbe map[string]bool
-	good   = [][8]string{}
+	cannotBe map[string]bool
+	good     = [][8]string{}
 )
 
+// Reverse processes the input ASCII art from a file if it starts with the prefix "--reverse="
 func Reverse(s string) bool {
-	cannbe = make(map[string]bool)
-	cannbe["shadow"] = true
-	cannbe["thinkertoy"] = true
-	cannbe["standard"] = true
+	cannotBe = make(map[string]bool)
+	cannotBe["shadow"] = true
+	cannotBe["thinkertoy"] = true
+	cannotBe["standard"] = true
+
 	if !strings.HasPrefix(s, "--reverse=") {
 		return false
 	}
@@ -27,91 +29,90 @@ func Reverse(s string) bool {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	data := strings.Split(string(file), "\n")
-	// data = data[:len(data)-1]
 	counter := 0
-	g := []bool{}
+	var g []bool
+
 	for i, line := range data {
 		if counter == 8 {
 			counter = 0
 		}
-		// fmt.Println(i, counter)
+
 		if counter == 0 && i == len(data)-1 {
-			good = append(good, addCharacher(g, [8]string(data[i-8:i]))...)
+			good = append(good, addCharacter(g, [8]string(data[i-8:i]))...)
 			break
 		}
+
 		if line == "" && i < len(data)-1 {
-			// fmt.Println("i:====", i, good)
 			if counter != 0 {
-				fmt.Printf("ERROR: Malformed file.\nLine %v should not be empty line.\n", i)
+				fmt.Printf("ERROR: Malformed file.\nLine %v should not be an empty line.\n", i)
 				os.Exit(0)
 			}
 			good = append(good, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
 			continue
 		}
+
 		counter++
 		if counter == 1 || i == len(data)-1 {
 			if i > 7 {
-				good = append(good, addCharacher(g, [8]string(data[i-8:i]))...)
+				good = append(good, addCharacter(g, [8]string(data[i-8:i]))...)
 			}
 			g = make([]bool, len(line))
 		}
-		// fmt.Println("counter", counter, i, line, len(g), len(line))
+
 		if len(g) != len(line) {
-			fmt.Printf("ERROR: Malformed file.\nLine %v should be %v charachers long.\n", i, len(g))
+			fmt.Printf("ERROR: Malformed file.\nLine %v should be %v characters long.\n", i, len(g))
 			os.Exit(0)
 		}
+
 		for i1, c := range line {
 			if c != ' ' {
 				g[i1] = true
-				canntbehandler(c)
-				continue
+				handleCharacter(c)
 			}
 		}
-
 	}
 
-	resverseascii()
+	reverseASCII()
 	return true
 }
 
-func addCharacher(g []bool, data [8]string) [][8]string {
-	// fmt.Println("data:", data) // Check if the value is false
-	charachter := [8]string{}
-	line := [][8]string{}
+// addCharacter combines character data into structured format
+func addCharacter(g []bool, data [8]string) [][8]string {
+	character := [8]string{}
+	var lines [][8]string
+
 	for i1, c := range g {
 		if !c {
-			if charachter[0] != "" {
-				line = append(line, charachter)
+			if character[0] != "" {
+				lines = append(lines, character)
 			} else {
-				line = append(line, [8]string{" ", "", "", "", "", "", "", ""})
+				lines = append(lines, [8]string{" ", "", "", "", "", "", "", ""})
 			}
-			charachter = [8]string{}
+			character = [8]string{}
 		} else {
-			charachter[0] += string(data[0][i1])
-			charachter[1] += string(data[1][i1])
-			charachter[2] += string(data[2][i1])
-			charachter[3] += string(data[3][i1])
-			charachter[4] += string(data[4][i1])
-			charachter[5] += string(data[5][i1])
-			charachter[6] += string(data[6][i1])
-			charachter[7] += string(data[7][i1])
+			for j := 0; j < 8; j++ {
+				character[j] += string(data[j][i1])
+			}
 		}
 	}
-	line = append(line, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
-	return line
+	lines = append(lines, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
+	return lines
 }
 
-func otherthansp(a string) bool {
+// otherThanSpace checks if the string contains any non-space character
+func otherThanSpace(a string) bool {
 	for _, v := range a {
-		if v != ' ' { // Check if the value is false
+		if v != ' ' {
 			return true
 		}
 	}
 	return false
 }
 
-func resverseascii() {
+// reverseASCII processes the ASCII art to generate the final output
+func reverseASCII() {
 	if len(good) == 0 {
 		fmt.Println(0)
 		return
@@ -123,7 +124,7 @@ func resverseascii() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	// fmt.Println(cannbe, otherthansp(""))
+
 	counter := 0
 	for _, v := range good {
 		rgx := "\n\n"
@@ -138,28 +139,20 @@ func resverseascii() {
 			res += "\\n"
 			continue
 		}
+
 		for _, v1 := range v {
-			if !otherthansp(v1) {
+			if !otherThanSpace(v1) {
 				continue
 			}
 			rgx += "\\s*" + regexp.QuoteMeta(v1) + "\\s+\n"
 		}
-		if len(rgx) != 2 {
 
+		if len(rgx) > 2 {
 			regex := regexp.MustCompile(rgx)
-			azer := regex.FindAllIndex(file, -1)
-			if len(azer) == 1 {
-
-				// fmt.Println(azer)
-				char := byte((strings.Count(string(file[:azer[0][0]]), "\n") / 9) + 33)
-				// fmt.Println(char)
+			indices := regex.FindAllIndex(file, -1)
+			if len(indices) == 1 {
+				char := byte((strings.Count(string(file[:indices[0][0]]), "\n") / 9) + 33)
 				res += string(char)
-			} else {
-				// fmt.Println(azer)
-				// for _, qsdf := range v {
-				// 	// fmt.Println(qsdf)
-				// }
-				// fmt.Println(rgx)
 			}
 		} else {
 			log.Fatalln(v)
@@ -168,70 +161,15 @@ func resverseascii() {
 	fmt.Printf("%v", res)
 }
 
-func canntbehandler(c rune) {
+// handleCharacter checks if the character can be part of the ASCII art
+func handleCharacter(c rune) {
 	if !strings.Contains("/_\\|,.'()` ", string(c)) {
-		// fmt.Println(string(c))
-		cannbe["standard"] = false
+		cannotBe["standard"] = false
 	}
 	if !strings.Contains(" _|", string(c)) {
-		// fmt.Println(string(c))
-		cannbe["shadow"] = false
+		cannotBe["shadow"] = false
 	}
-	if !strings.Contains("o /O-'|\r\\", string(c)) {
-		// fmt.Println(string(c))
-		cannbe["thinkertoy"] = false
+	if !strings.Contains("o /O-'|\\r\\", string(c)) {
+		cannotBe["thinkertoy"] = false
 	}
 }
-
-// func Reverse1(s string) bool {
-// 	cannbe = make(map[string]bool)
-// 	if !strings.HasPrefix(s, "--reverse=") {
-// 		return false
-// 	}
-// 	s = strings.TrimPrefix(s, "--reverse=")
-// 	file, err := os.ReadFile(s)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		os.Exit(1)
-// 	}
-// 	// data = data[:len(data)-1]
-// 	// res := ""
-// 	// template := ParseTmplate("standard.txt")
-// 	lines := splitdata(&file)
-// 	fmt.Printf("%v\n", lines)
-// 	return true
-// }
-
-// func splitdata(file *[]byte) [][]string {
-// 	data := strings.Split(string(*file), "\n")
-// 	var res [][]string
-// 	line := []string{}
-// 	for _, ln := range data {
-// 		if len(ln) == 0 {
-// 			res = append(res, []string{})
-// 			continue
-// 		}
-// 		if len(line)%8 == 1 {
-// 			res = append(res, []string{})
-// 			continue
-// 		} else if len(line)%8 != 0 {
-// 			fmt.Println(len(line), len(v), len(line)%8)
-// 			return nil
-// 		}
-// 		res = append(res, splitIntoChunks(line, 8)...)
-// 	}
-// 	fmt.Println(res, data)
-// 	return res
-// }
-
-// func splitIntoChunks(data []string, chunkSize int) [][]string {
-// 	var chunks [][]string
-// 	for i := 0; i < len(data); i += chunkSize {
-// 		end := i + chunkSize
-// 		if end > len(data) {
-// 			end = len(data)
-// 		}
-// 		chunks = append(chunks, data[i:end])
-// 	}
-// 	return chunks
-// }
