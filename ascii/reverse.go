@@ -86,7 +86,7 @@ func Reverse(s string) bool {
 			}
 		}
 	}
-
+	handleDoubleQuote()
 	reverseASCII()
 	return true
 }
@@ -195,7 +195,40 @@ func handleCharacter(c rune) {
 	if !strings.Contains(" _|", string(c)) {
 		cannotBe["shadow"] = false
 	}
-	if !strings.Contains("o /O0-'|\\r\\", string(c)) {
+	if !strings.Contains("o /O0-'|\\r\\_", string(c)) {
+		// fmt.Println(byte(c))
 		cannotBe["thinkertoy"] = false
+	}
+}
+
+// handleDoubleQuote handles double quotes in the ASCII art
+func handleDoubleQuote() {
+	if cannotBe["thinkertoy"] {
+		for i, v := range good {
+			if len(v[2]) == 1 {
+				if v == [8]string{"o", "|", " ", " ", " ", " ", " ", " "} {
+					if i <= len(good)-3 {
+						if good[i+1] == [8]string{"o", "|", " ", " ", " ", " ", " ", " "} {
+							good[i] = [8]string{"o o", "| |", "  ", "  ", "  ", "  ", "  ", "  "}
+							good = append(good[:i+1], good[i+2:]...)
+						}
+					}
+				}
+			}
+		}
+	}
+	if cannotBe["shadow"] {
+		for i, v := range good {
+			if len(v[2]) == 2 {
+				if v == [8]string{"_|", "_|", "  ", "  ", "  ", "  ", "  ", "  "} {
+					if i <= len(good)-3 {
+						if good[i] == [8]string{"_|", "_|", "  ", "  ", "  ", "  ", "  ", "  "} {
+							good[i] = [8]string{"_|  _|", "_|  _|", "  ", "  ", "  ", "  ", "  ", "  "}
+							good = append(good[:i+1], good[i+3:]...)
+						}
+					}
+				}
+			}
+		}
 	}
 }
