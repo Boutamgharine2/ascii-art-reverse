@@ -229,8 +229,5 @@ func justifyText(width int) {
 func multipleword(s string) bool {
 	s = strings.Trim(s, " ")
 	s1 := strings.Count(s, " ")
-	if s1 == 0 {
-		return false
-	}
-	return true
+	return s1 != 0
 }

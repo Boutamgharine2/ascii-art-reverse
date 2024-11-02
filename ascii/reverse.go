@@ -1,8 +1,8 @@
 package asci
 
 import (
+	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -31,6 +31,12 @@ func Reverse(s string) bool {
 	}
 
 	data := strings.Split(string(file), "\n")
+	if len(data)-1 == len(file) {
+		for i := 1; i < len(data); i++ {
+			fmt.Print("\\n")
+		}
+		return true
+	}
 	counter := 0
 	var g []bool
 
@@ -38,8 +44,10 @@ func Reverse(s string) bool {
 		if counter == 8 {
 			counter = 0
 		}
-
 		if counter == 0 && i == len(data)-1 {
+			if len(g) == 0 {
+				break
+			}
 			good = append(good, addCharacter(g, [8]string(data[i-8:i]))...)
 			break
 		}
@@ -49,12 +57,17 @@ func Reverse(s string) bool {
 				fmt.Printf("ERROR: Malformed file.\nLine %v should not be an empty line.\n", i)
 				os.Exit(0)
 			}
-			good = append(good, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
+			if len(g) > 0 {
+				good = append(good, addCharacter(g, [8]string(data[i-8:i]))...)
+			}
+			good = append(good, [8]string{"\n", "", "", "", "", "", "", ""})
+
+			g = make([]bool, len(line))
 			continue
 		}
 
 		counter++
-		if counter == 1 || i == len(data)-1 {
+		if counter == 1 {
 			if i > 7 {
 				good = append(good, addCharacter(g, [8]string(data[i-8:i]))...)
 			}
@@ -80,6 +93,9 @@ func Reverse(s string) bool {
 
 // addCharacter combines character data into structured format
 func addCharacter(g []bool, data [8]string) [][8]string {
+	if len(data[0]) == 0 {
+		return [][8]string{{"\n", "", "", "", "", "", "", ""}}
+	}
 	character := [8]string{}
 	var lines [][8]string
 
@@ -93,83 +109,93 @@ func addCharacter(g []bool, data [8]string) [][8]string {
 			character = [8]string{}
 		} else {
 			for j := 0; j < 8; j++ {
-				character[j] += string(data[j][i1])
+				ln := data[j]
+				s := string(ln[i1])
+				character[j] += s
 			}
 		}
 	}
-	lines = append(lines, [8]string{"\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"})
+	lines = append(lines, [8]string{"\n", "", "", "", "", "", "", ""})
 	return lines
-}
-
-// otherThanSpace checks if the string contains any non-space character
-func otherThanSpace(a string) bool {
-	for _, v := range a {
-		if v != ' ' {
-			return true
-		}
-	}
-	return false
 }
 
 // reverseASCII processes the ASCII art to generate the final output
 func reverseASCII() {
 	if len(good) == 0 {
-		fmt.Println(0)
+		fmt.Println("good = 0")
 		return
 	}
 	good = good[:len(good)-1]
-	res := ""
-	file, err := os.ReadFile("standard.txt")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	counter := 0
-	for _, v := range good {
-		rgx := "\n\n"
-		if v[0] == " " {
-			counter++
-			if counter == 6 {
-				res += " "
-				counter = 0
+	results := []string{}
+	for n, v := range cannotBe {
+		var file []byte
+		res := ""
+		if v {
+			// fmt.Print(n, v)
+			file1, err := os.ReadFile(n + ".txt")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
 			}
-			continue
-		} else if v[0] == "\n" {
-			res += "\\n"
-			continue
-		}
-
-		for _, v1 := range v {
-			if !otherThanSpace(v1) {
-				continue
-			}
-			rgx += "\\s*" + regexp.QuoteMeta(v1) + "\\s+\n"
-		}
-
-		if len(rgx) > 2 {
-			regex := regexp.MustCompile(rgx)
-			indices := regex.FindAllIndex(file, -1)
-			if len(indices) == 1 {
-				char := byte((strings.Count(string(file[:indices[0][0]]), "\n") / 9) + 33)
-				res += string(char)
+			file = file1
+			if n == "thinkertoy" {
+				file = bytes.ReplaceAll(file1, []byte("\r\n"), []byte("\n"))
 			}
 		} else {
-			log.Fatalln(v)
+			continue
+		}
+		counter := 0
+		for _, v := range good {
+			rgx := "\n\n"
+			if strings.Join(v[:], "") == " " {
+				counter++
+				if counter == 6 {
+					res += " "
+					counter = 0
+				}
+				continue
+			} else if strings.Join(v[:], "") == "\n" {
+				res += "\\n"
+				continue
+			}
+			endline := "\n"
+			for _, v1 := range v {
+				rgx += regexp.QuoteMeta(v1) + "\\s+" + endline
+			}
+
+			if len(rgx) > 2 {
+				regex := regexp.MustCompile(rgx)
+				indices := regex.FindAllIndex(file, -1)
+				if len(indices) == 1 {
+					char := byte((strings.Count(string(file[:indices[0][0]]), "\n") / 9) + 33)
+					res += string(char)
+				}
+			}
+		}
+		results = append(results, res)
+	}
+	azer := 0
+	for _, v := range results {
+		if len(v) > azer {
+			azer = len(v)
 		}
 	}
-	fmt.Printf("%v", res)
+	for _, v := range results {
+		if len(v) == azer {
+			fmt.Print(v)
+		}
+	}
 }
 
 // handleCharacter checks if the character can be part of the ASCII art
 func handleCharacter(c rune) {
-	if !strings.Contains("/_\\|,.'()` ", string(c)) {
+	if !strings.Contains("/_\\|,.'()` V<>", string(c)) {
 		cannotBe["standard"] = false
 	}
 	if !strings.Contains(" _|", string(c)) {
 		cannotBe["shadow"] = false
 	}
-	if !strings.Contains("o /O-'|\\r\\", string(c)) {
+	if !strings.Contains("o /O0-'|\\r\\", string(c)) {
 		cannotBe["thinkertoy"] = false
 	}
 }
